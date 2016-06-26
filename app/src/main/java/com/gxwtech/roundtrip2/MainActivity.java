@@ -36,6 +36,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.ListView;
@@ -47,6 +48,12 @@ import com.gxwtech.roundtrip2.RoundtripService.RoundtripServiceIPCFunctions;
 import com.gxwtech.roundtrip2.util.tools;
 
 import java.util.ArrayList;
+=======
+import com.gxwtech.roundtrip2.HistoryActivity.HistoryPageListActivity;
+import com.gxwtech.roundtrip2.RoundtripService.RoundtripService;
+import com.gxwtech.roundtrip2.ServiceData.ServiceClientActions;
+import com.gxwtech.roundtrip2.ServiceData.ServiceCommand;
+>>>>>>> 1c1b0be81732335e1a03ec04210d02dfb003035e
 =======
 import com.gxwtech.roundtrip2.HistoryActivity.HistoryPageListActivity;
 import com.gxwtech.roundtrip2.RoundtripService.RoundtripService;
@@ -302,6 +309,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     public void onQuickTuneButtonClicked(View view) {
         clientConnection.sendIPCMessage(RT2Const.IPC.MSG_PUMP_quickTune);
     }
@@ -324,6 +332,11 @@ public class MainActivity extends AppCompatActivity {
                 return true;
         }
         return super.onKeyUp(keyCode, event);
+=======
+    public void onReadPumpClockButtonClicked(View view) {
+        ServiceCommand readPumpClockCommand = ServiceClientActions.makeReadPumpClockCommand();
+        roundtripServiceClientConnection.sendServiceCommand(readPumpClockCommand);
+>>>>>>> 1c1b0be81732335e1a03ec04210d02dfb003035e
     }
 
     @Override

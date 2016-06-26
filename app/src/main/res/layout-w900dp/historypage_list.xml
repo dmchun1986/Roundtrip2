@@ -9,7 +9,11 @@
     android:divider="?android:attr/dividerHorizontal"
     android:orientation="horizontal"
     android:showDividers="middle"
+<<<<<<< HEAD
     tools:context=".HistoryPageListActivity">
+=======
+    tools:context=".HistoryActivity.HistoryPageListActivity">
+>>>>>>> 1c1b0be81732335e1a03ec04210d02dfb003035e
 
     <!--
     This layout is a two-pane layout for the HistoryPages
@@ -26,7 +30,11 @@
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"
         app:layoutManager="LinearLayoutManager"
+<<<<<<< HEAD
         tools:context=".HistoryPageListActivity"
+=======
+        tools:context=".HistoryActivity.HistoryPageListActivity"
+>>>>>>> 1c1b0be81732335e1a03ec04210d02dfb003035e
         tools:listitem="@layout/historypage_list_content" />
 
     <FrameLayout

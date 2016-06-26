@@ -27,9 +27,12 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.4.0'
+<<<<<<< HEAD
     compile 'com.michaelpardo:activeandroid:3.1.0-SNAPSHOT'
     compile 'com.google.code.gson:gson:2.4'
     compile 'com.android.support:design:23.4.0'
+=======
+>>>>>>> 1c1b0be81732335e1a03ec04210d02dfb003035e
     compile 'joda-time:joda-time:2.9.1'
     compile 'com.android.support:support-v4:23.4.0'
     compile 'com.android.support:recyclerview-v7:23.4.0'

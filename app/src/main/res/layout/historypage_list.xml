@@ -7,8 +7,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layoutManager="LinearLayoutManager"
+<<<<<<< HEAD
     android:background="@color/primary_light"
     android:foreground="@color/primary_dark"
+=======
+>>>>>>> 1c1b0be81732335e1a03ec04210d02dfb003035e
     tools:context=".HistoryActivity.HistoryPageListActivity"
     tools:listitem="@layout/historypage_list_content" />
 
