@@ -7,7 +7,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layoutManager="LinearLayoutManager"
-    tools:context="com.gxwtech.roundtrip2.HistoryPageListActivity"
-    tools:listitem="@layout/historypage_list_content"
     android:background="@color/primary_light"
-    android:foreground="@color/primary_dark"/>
+    android:foreground="@color/primary_dark"
+    tools:context=".HistoryActivity.HistoryPageListActivity"
+    tools:listitem="@layout/historypage_list_content" />
+

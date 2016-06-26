@@ -35,6 +35,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+<<<<<<< HEAD
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.ListView;
@@ -46,6 +47,12 @@ import com.gxwtech.roundtrip2.RoundtripService.RoundtripServiceIPCFunctions;
 import com.gxwtech.roundtrip2.util.tools;
 
 import java.util.ArrayList;
+=======
+import com.gxwtech.roundtrip2.HistoryActivity.HistoryPageListActivity;
+import com.gxwtech.roundtrip2.RoundtripService.RoundtripService;
+import com.gxwtech.roundtrip2.ServiceData.ServiceClientActions;
+import com.gxwtech.roundtrip2.ServiceData.ServiceCommand;
+>>>>>>> 1c1b0be81732335e1a03ec04210d02dfb003035e
 
 public class MainActivity extends AppCompatActivity {
 
@@ -70,10 +77,71 @@ public class MainActivity extends AppCompatActivity {
 
         setupMenuAndToolbar();
 
+<<<<<<< HEAD
         //Sets default Preferences
         PreferenceManager.setDefaultValues(this, R.xml.pref_pump, false);
         PreferenceManager.setDefaultValues(this, R.xml.pref_rileylink, false);
 
+=======
+        mBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent receivedIntent) {
+                if (receivedIntent == null) {
+                    Log.e(TAG,"onReceive: received null intent");
+                } else {
+                    String action = receivedIntent.getAction();
+                    if (action == null) {
+                        Log.e(TAG, "onReceive: null action");
+                    } else {
+                        Intent intent;
+
+                        if (RT2Const.local.INTENT_serviceConnected.equals(action)) {
+
+                            sendPUMP_useThisDevice("518163");
+                            sendBLEuseThisDevice("00:07:80:2D:9E:F4"); // for automated testing
+                        } else if (RT2Const.IPC.MSG_BLE_RileyLinkReady.equals(action)) {
+                            setRileylinkStatusMessage("OK");
+                        } else if (RT2Const.IPC.MSG_BLE_requestAccess.equals(action)) {
+                            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+                        } else if (RT2Const.IPC.MSG_PUMP_pumpFound.equals(action)) {
+                            setPumpStatusMessage("OK");
+                        } else if (RT2Const.IPC.MSG_PUMP_pumpLost.equals(action)) {
+                            setPumpStatusMessage("Lost");
+                        } else if (RT2Const.IPC.MSG_PUMP_reportedPumpModel.equals(action)) {
+                            Bundle bundle = receivedIntent.getBundleExtra(RT2Const.IPC.bundleKey);
+                            String modelString = bundle.getString("model", "(unknown)");
+                            setPumpStatusMessage(modelString);
+                        } else if (RT2Const.IPC.MSG_PUMP_history.equals(action)) {
+                            Intent launchHistoryViewIntent = new Intent(context,HistoryPageListActivity.class);
+                            storeForHistoryViewer = receivedIntent.getExtras().getBundle(RT2Const.IPC.bundleKey);
+                            startActivity(new Intent(context,HistoryPageListActivity.class));
+                            // wait for history viwere to announce "ready"
+                        } else if (RT2Const.local.INTENT_historyPageViewerReady.equals(action)) {
+                            Intent sendHistoryIntent = new Intent(RT2Const.local.INTENT_historyPageBundleIncoming);
+                            sendHistoryIntent.putExtra(RT2Const.IPC.MSG_PUMP_history_key, storeForHistoryViewer);
+                            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(sendHistoryIntent);
+                        } else if (RT2Const.IPC.MSG_ServiceResult.equals(action)) {
+                            Log.i(TAG,"Received ServiceResult");
+                        } else {
+                            Log.e(TAG,"Unrecognized intent action: " + action);
+                        }
+                    }
+                }
+            }
+        };
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(RT2Const.local.INTENT_serviceConnected);
+        intentFilter.addAction(RT2Const.IPC.MSG_BLE_RileyLinkReady);
+        intentFilter.addAction(RT2Const.IPC.MSG_BLE_requestAccess);
+        intentFilter.addAction(RT2Const.IPC.MSG_PUMP_pumpFound);
+        intentFilter.addAction(RT2Const.IPC.MSG_PUMP_pumpLost);
+        intentFilter.addAction(RT2Const.IPC.MSG_PUMP_reportedPumpModel);
+        intentFilter.addAction(RT2Const.IPC.MSG_PUMP_history);
+        intentFilter.addAction(RT2Const.IPC.MSG_ServiceResult);
+        intentFilter.addAction(RT2Const.local.INTENT_historyPageViewerReady);
+>>>>>>> 1c1b0be81732335e1a03ec04210d02dfb003035e
 
 
         //UI RT Service client connection
@@ -233,6 +301,7 @@ public class MainActivity extends AppCompatActivity {
         clientConnection.sendIPCMessage(RT2Const.IPC.MSG_PUMP_fetchSavedHistory);
     }
 
+<<<<<<< HEAD
     public void onQuickTuneButtonClicked(View view) {
         clientConnection.sendIPCMessage(RT2Const.IPC.MSG_PUMP_quickTune);
     }
@@ -347,6 +416,11 @@ public class MainActivity extends AppCompatActivity {
         mDrawerToggle.syncState();
         mDrawerToggle.setDrawerIndicatorEnabled(true);
         mDrawerLayout.addDrawerListener(mDrawerToggle);
+=======
+    public void onReadPumpClockButtonClicked(View view) {
+        ServiceCommand readPumpClockCommand = ServiceClientActions.makeReadPumpClockCommand();
+        roundtripServiceClientConnection.sendServiceCommand(readPumpClockCommand);
+>>>>>>> 1c1b0be81732335e1a03ec04210d02dfb003035e
     }
 
 

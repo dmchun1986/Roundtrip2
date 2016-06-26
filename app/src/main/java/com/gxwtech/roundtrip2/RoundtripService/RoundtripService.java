@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.PowerManager;
@@ -22,13 +23,22 @@ import com.gxwtech.roundtrip2.RoundtripService.RileyLink.PumpManager;
 import com.gxwtech.roundtrip2.RoundtripService.RileyLinkBLE.RFSpy;
 import com.gxwtech.roundtrip2.RoundtripService.RileyLinkBLE.RileyLinkBLE;
 import com.gxwtech.roundtrip2.RoundtripService.medtronic.PumpData.Page;
+import com.gxwtech.roundtrip2.RoundtripService.medtronic.PumpData.PumpHistoryManager;
+import com.gxwtech.roundtrip2.RoundtripService.medtronic.PumpMessage;
 import com.gxwtech.roundtrip2.RoundtripService.medtronic.PumpModel;
+import com.gxwtech.roundtrip2.ServiceData.ReadPumpClockResult;
+import com.gxwtech.roundtrip2.ServiceData.ServiceResult;
 import com.gxwtech.roundtrip2.util.ByteUtil;
 
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 
 /**
@@ -57,6 +67,7 @@ public class RoundtripService extends Service {
 
     // cache of most recently received set of pump history pages. Probably shouldn't be here.
     ArrayList<Page> mHistoryPages;
+    PumpHistoryManager pumpHistoryManager;
 
 
     // Our hardware/software connection
@@ -94,6 +105,9 @@ public class RoundtripService extends Service {
 
         // get most recently used RileyLink address
         mRileylinkAddress = sharedPref.getString(RT2Const.serviceLocal.rileylinkAddressKey,"");
+
+        pumpHistoryManager = new PumpHistoryManager(getApplicationContext());
+        rileyLinkBLE = new RileyLinkBLE(this);
 
         mBroadcastReceiver = new BroadcastReceiver() {
             @Override
@@ -202,11 +216,18 @@ public class RoundtripService extends Service {
                             }
                             bundle.putParcelableArrayList(RT2Const.IPC.MSG_PUMP_history_key, packedPages);
 
+                            // save it to SQL.
+                            pumpHistoryManager.clearDatabase();
+                            pumpHistoryManager.initFromPages(bundle);
+                            // write html page to documents folder
+                            pumpHistoryManager.writeHtmlPage();
+
                             // Set payload
                             msg.setData(bundle);
-                            serviceConnection.sendMessage(msg);
+                            serviceConnection.sendMessage(msg,null/*broadcast*/);
                             Log.d(TAG, "sendMessage: sent Full history report");
                         } else if (RT2Const.IPC.MSG_PUMP_fetchSavedHistory.equals(action)) {
+                            Log.i(TAG,"Fetching saved history");
                             FileInputStream inputStream;
                             ArrayList<Page> storedHistoryPages = new ArrayList<>();
                             for (int i = 0; i < 16; i++) {
@@ -218,7 +239,8 @@ public class RoundtripService extends Service {
                                     int numRead = inputStream.read(buffer, 0, 1024);
                                     if (numRead == 1024) {
                                         Page p = new Page();
-                                        p.parseFrom(buffer, PumpModel.MM522);
+                                        //p.parseFrom(buffer, PumpModel.MM522);
+                                        p.parseByDates(buffer, PumpModel.MM522);
                                         storedHistoryPages.add(p);
                                     } else {
                                         Log.e(TAG, filename + " error: short file");
@@ -245,17 +267,26 @@ public class RoundtripService extends Service {
                                 }
                                 bundle.putParcelableArrayList(RT2Const.IPC.MSG_PUMP_history_key, packedPages);
 
+                                // save it to SQL.
+                                pumpHistoryManager.clearDatabase();
+                                pumpHistoryManager.initFromPages(bundle);
+                                // write html page to documents folder
+                                pumpHistoryManager.writeHtmlPage();
+
                                 // Set payload
                                 msg.setData(bundle);
-                                serviceConnection.sendMessage(msg);
+                                serviceConnection.sendMessage(msg,null/*broadcast*/);
 
                             }
                         } else if (RT2Const.IPC.MSG_PUMP_useThisAddress.equals(action)) {
                             Bundle bundle = intent.getBundleExtra(RT2Const.IPC.bundleKey);
                             String idString = bundle.getString("pumpID");
-                            if ((idString != null) && (idString.length()==6)) {
+                            if ((idString != null) && (idString.length() == 6)) {
                                 setPumpIDString(idString);
                             }
+                        } else if (RT2Const.IPC.MSG_ServiceCommand.equals(action)) {
+                            Bundle bundle = intent.getBundleExtra(RT2Const.IPC.bundleKey);
+                            handleServiceCommand(bundle);
                         } else {
                             Log.e(TAG, "Unhandled broadcast: action=" + action);
                         }
@@ -275,15 +306,17 @@ public class RoundtripService extends Service {
         intentFilter.addAction(RT2Const.IPC.MSG_PUMP_fetchHistory);
         intentFilter.addAction(RT2Const.IPC.MSG_PUMP_useThisAddress);
         intentFilter.addAction(RT2Const.IPC.MSG_PUMP_fetchSavedHistory);
+        intentFilter.addAction(RT2Const.IPC.MSG_ServiceCommand);
 
         LocalBroadcastManager.getInstance(mContext).registerReceiver(mBroadcastReceiver, intentFilter);
 
         Log.d(TAG, "onCreate(): It's ALIVE!");
 
-        rileyLinkBLE = new RileyLinkBLE(this);
         if (mRileylinkAddress.length() > 0) {
             rileyLinkBLE.findRileyLink(mRileylinkAddress);
         }
+
+
     }
 
     @Nullable
@@ -417,5 +450,41 @@ public class RoundtripService extends Service {
     private void reportPumpFound() {
         serviceConnection.sendMessage(RT2Const.IPC.MSG_PUMP_pumpFound);
     }
+
+    private void handleServiceCommand(Bundle messageBundle) {
+        // messageBundle also has our "reply-to" hash.
+        Bundle commandBundle = messageBundle.getBundle(RT2Const.IPC.bundleKey);
+        String commandString = commandBundle.getString("command");
+        if ("ReadPumpClock".equals(commandString)) {
+            ReadPumpClockResult pumpResponse = pumpManager.getPumpRTC();
+            if (pumpResponse != null) {
+                Log.i(TAG,"ReadPumpClock: " + pumpResponse.getTimeString());
+            } else {
+                Log.e(TAG,"handleServiceCommand("+commandString+") pumpResponse is null");
+            }
+            sendServiceCommandResponse(messageBundle,pumpResponse);
+        }
+    }
+
+
+    private void sendServiceCommandResponse(Bundle originalIntentBundle, ServiceResult serviceResult) {
+        // convert from Intent bundle to Message bundle
+        if (originalIntentBundle == null) return;
+        // get the key (hashcode) of the client who requested this
+        Integer clientHashcode = originalIntentBundle.getInt(RT2Const.serviceLocal.IPCReplyTo_hashCodeKey);
+        // make a new bundle to send as the message data
+        Bundle serviceResultBundle = new Bundle();
+        // get the original command bundle that was sent to us
+        Bundle originalCommandBundle = originalIntentBundle.getBundle(RT2Const.IPC.bundleKey);
+        String commandID = originalCommandBundle.getString("commandID");
+        // put the original command into the reply (why not?)
+        serviceResultBundle.putBundle("command",originalCommandBundle);
+        serviceResultBundle.putString("commandID",commandID);
+        serviceResultBundle.putBundle("response",serviceResult.getResponseBundle());
+        serviceResultBundle.putString(RT2Const.IPC.messageKey, RT2Const.IPC.MSG_ServiceResult);
+
+        serviceConnection.sendMessageBundle(serviceResultBundle,clientHashcode);
+    }
+
 }
 
