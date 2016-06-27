@@ -4,6 +4,7 @@ import android.app.Application;
 
 import com.activeandroid.ActiveAndroid;
 import com.activeandroid.Configuration;
+import com.gxwtech.roundtrip2.ServiceData.ServiceClientConnection;
 
 /**
  * Created by Tim on 15/06/2016.
@@ -11,11 +12,14 @@ import com.activeandroid.Configuration;
 public class MainApp extends Application {
 
     private static MainApp sInstance;
+    private static ServiceClientConnection serviceClientConnection;
 
     @Override
     public void onCreate() {
         super.onCreate();
         sInstance = this;
+
+        serviceClientConnection = new ServiceClientConnection();
 
         //Manually initialize ActiveAndroid
         // TODO: 05/11/2015 appears to be a bug in Active Android where DB version is ignored in Manifest, must be added here as well
@@ -29,6 +33,13 @@ public class MainApp extends Application {
 
     public static MainApp instance() {
         return sInstance;
+    }
+
+    public static ServiceClientConnection getServiceClientConnection(){
+        if (serviceClientConnection == null) {
+            serviceClientConnection = new ServiceClientConnection();
+        }
+        return serviceClientConnection;
     }
 
 

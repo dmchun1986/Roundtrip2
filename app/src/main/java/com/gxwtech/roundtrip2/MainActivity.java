@@ -53,9 +53,6 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static final int REQUEST_ENABLE_BT = 2177; // just something unique.
     private BroadcastReceiver mBroadcastReceiver;
-    private ServiceClientActions serviceClientActions;
-
-    //private RoundtripServiceClientConnection roundtripServiceClientConnection;
 
     BroadcastReceiver apsAppConnected;
     Bundle storeForHistoryViewer;
@@ -76,13 +73,10 @@ public class MainActivity extends AppCompatActivity {
         PreferenceManager.setDefaultValues(this, R.xml.pref_pump, false);
         PreferenceManager.setDefaultValues(this, R.xml.pref_rileylink, false);
 
-
+        setBroadcastReceiver();
 
         //UI RT Service client connection
-        serviceClientActions = new ServiceClientActions();
-        //roundtripServiceClientConnection = new RoundtripServiceClientConnection(this);
-
-        setBroadcastReceiver();
+        //serviceClientActions = new ServiceClientActions();
 
         /* start the RoundtripService */
 
@@ -93,19 +87,11 @@ public class MainActivity extends AppCompatActivity {
         // explicitly call startService to keep it running even when the GUI goes away.
         Intent bindIntent = new Intent(this,RoundtripService.class);
         startService(bindIntent);
-        // bind to the service for ease of message passing.
-        //doBindService();
 
         //Make sure CommunicationService is running, as this maybe first run
         startService(new Intent(this, CommunicationService.class));
     }
 
-    //public void doBindService() {
-    //    bindService(new Intent(this,RoundtripService.class),
-    //            roundtripServiceClientConnection.getServiceConnection(),
-    //            Context.BIND_AUTO_CREATE);
-    //    Log.d(TAG,"doBindService: binding.");
-    //}
 
     @Override
     protected void onResume(){
@@ -132,10 +118,10 @@ public class MainActivity extends AppCompatActivity {
             if (resultCode == RESULT_OK) {
                 // User allowed Bluetooth to turn on
                 // Let the service know
-                serviceClientActions.sendBLEaccessGranted();
+                MainApp.getServiceClientConnection().sendBLEaccessGranted();
             } else if (resultCode == RESULT_CANCELED) {
                 // Error, or user said "NO"
-                serviceClientActions.sendBLEaccessDenied();
+                MainApp.getServiceClientConnection().sendBLEaccessDenied();
                 finish();
             }
         }
@@ -154,10 +140,10 @@ public class MainActivity extends AppCompatActivity {
 
                     switch (receivedIntent.getAction()) {
                         case RT2Const.local.INTENT_NEW_rileylinkAddressKey:
-                            serviceClientActions.sendBLEuseThisDevice(prefs.getString(RT2Const.serviceLocal.rileylinkAddressKey, ""));
+                            MainApp.getServiceClientConnection().sendBLEuseThisDevice(prefs.getString(RT2Const.serviceLocal.rileylinkAddressKey, ""));
                             break;
                         case RT2Const.local.INTENT_NEW_pumpIDKey:
-                            serviceClientActions.sendPUMP_useThisDevice(prefs.getString(RT2Const.serviceLocal.pumpIDKey, ""));
+                            MainApp.getServiceClientConnection().sendPUMP_useThisDevice(prefs.getString(RT2Const.serviceLocal.pumpIDKey, ""));
                             break;
                         case RT2Const.IPC.MSG_BLE_RileyLinkReady:
                             setRileylinkStatusMessage("OK");
@@ -180,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
                         case RT2Const.IPC.MSG_PUMP_history:
                             Intent launchHistoryViewIntent = new Intent(context,HistoryPageListActivity.class);
                             storeForHistoryViewer = receivedIntent.getExtras().getBundle(RT2Const.IPC.bundleKey);
-                            //startActivity(new Intent(context,HistoryPageListActivity.class));
+                            startActivity(new Intent(context,HistoryPageListActivity.class));
                             // wait for history viwere to announce "ready"
                             break;
                         case RT2Const.local.INTENT_historyPageViewerReady:
@@ -223,6 +209,10 @@ public class MainActivity extends AppCompatActivity {
     *
      */
 
+   public void testButton(View view) {
+       MainApp.getServiceClientConnection().setTempBasal(5,10,555);
+    }
+
     void setRileylinkStatusMessage(String statusMessage) {
         TextView field = (TextView)findViewById(R.id.textViewFieldRileyLink);
         field.setText(statusMessage);
@@ -234,21 +224,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onTunePumpButtonClicked(View view) {
-        serviceClientActions.sendIPCMessage(RT2Const.IPC.MSG_PUMP_tunePump);
+        MainApp.getServiceClientConnection().doTunePump();
     }
 
     public void onFetchHistoryButtonClicked(View view) {
-        serviceClientActions.sendIPCMessage(RT2Const.IPC.MSG_PUMP_fetchHistory);
+        MainApp.getServiceClientConnection().getHistory();
     }
 
     public void onFetchSavedHistoryButtonClicked(View view) {
-        serviceClientActions.sendIPCMessage(RT2Const.IPC.MSG_PUMP_fetchSavedHistory);
+        MainApp.getServiceClientConnection().getSavedHistory();
     }
 
     public void onReadPumpClockButtonClicked(View view) {
-        //ServiceCommand readPumpClockCommand = ServiceClientActions.makeReadPumpClockCommand();
-        //roundtripServiceClientConnection.sendServiceCommand(readPumpClockCommand);
-        serviceClientActions.makeReadPumpClockCommand();
+        MainApp.getServiceClientConnection().readPumpClock();
     }
 
     /* UI Setup */
