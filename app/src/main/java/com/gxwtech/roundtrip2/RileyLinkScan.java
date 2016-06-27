@@ -8,10 +8,8 @@ import android.bluetooth.le.ScanFilter;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
@@ -27,7 +25,6 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 
-import com.gxwtech.roundtrip2.RoundtripService.RoundtripServiceIPCFunctions;
 import com.gxwtech.roundtrip2.util.LocationHelper;
 
 import java.util.ArrayList;

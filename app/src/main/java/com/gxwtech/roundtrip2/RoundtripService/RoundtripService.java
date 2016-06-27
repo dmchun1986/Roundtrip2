@@ -13,6 +13,7 @@ import android.os.Environment;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.PowerManager;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -87,7 +88,8 @@ public class RoundtripService extends Service {
         mContext = getApplicationContext();
         serviceConnection = new RoundtripServiceIPCConnection(mContext);
 
-        sharedPref = mContext.getSharedPreferences(RT2Const.serviceLocal.sharedPreferencesKey, Context.MODE_PRIVATE);
+        //sharedPref = mContext.getSharedPreferences(RT2Const.serviceLocal.sharedPreferencesKey, Context.MODE_PRIVATE);
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
         // get most recently used pumpID
         pumpIDString = sharedPref.getString(RT2Const.serviceLocal.pumpIDKey,"000000");

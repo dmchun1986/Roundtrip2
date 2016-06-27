@@ -44,8 +44,6 @@ import android.widget.ListView;
 import com.gxwtech.roundtrip2.CommunicationService.CommunicationService;
 import com.gxwtech.roundtrip2.RoundtripService.RoundtripService;
 import com.gxwtech.roundtrip2.ServiceData.ServiceClientActions;
-import com.gxwtech.roundtrip2.ServiceData.ServiceCommand;
-import com.gxwtech.roundtrip2.RoundtripService.RoundtripServiceIPCFunctions;
 import com.gxwtech.roundtrip2.util.tools;
 
 import java.util.ArrayList;
@@ -54,9 +52,10 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private static final int REQUEST_ENABLE_BT = 2177; // just something unique.
-    private RoundtripServiceClientConnection roundtripServiceClientConnection;
     private BroadcastReceiver mBroadcastReceiver;
-    private RoundtripServiceIPCFunctions clientConnection;
+    private ServiceClientActions serviceClientActions;
+
+    //private RoundtripServiceClientConnection roundtripServiceClientConnection;
 
     BroadcastReceiver apsAppConnected;
     Bundle storeForHistoryViewer;
@@ -80,7 +79,8 @@ public class MainActivity extends AppCompatActivity {
 
 
         //UI RT Service client connection
-        clientConnection = new RoundtripServiceIPCFunctions();
+        serviceClientActions = new ServiceClientActions();
+        //roundtripServiceClientConnection = new RoundtripServiceClientConnection(this);
 
         setBroadcastReceiver();
 
@@ -99,6 +99,13 @@ public class MainActivity extends AppCompatActivity {
         //Make sure CommunicationService is running, as this maybe first run
         startService(new Intent(this, CommunicationService.class));
     }
+
+    //public void doBindService() {
+    //    bindService(new Intent(this,RoundtripService.class),
+    //            roundtripServiceClientConnection.getServiceConnection(),
+    //            Context.BIND_AUTO_CREATE);
+    //    Log.d(TAG,"doBindService: binding.");
+    //}
 
     @Override
     protected void onResume(){
@@ -122,15 +129,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_ENABLE_BT) {
-            RoundtripServiceIPCFunctions client = new RoundtripServiceIPCFunctions();
-
             if (resultCode == RESULT_OK) {
                 // User allowed Bluetooth to turn on
                 // Let the service know
-                client.sendBLEaccessGranted();
+                serviceClientActions.sendBLEaccessGranted();
             } else if (resultCode == RESULT_CANCELED) {
                 // Error, or user said "NO"
-                client.sendBLEaccessDenied();
+                serviceClientActions.sendBLEaccessDenied();
                 finish();
             }
         }
@@ -147,17 +152,12 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MainApp.instance());
 
-                        if (RT2Const.local.INTENT_serviceConnected.equals(action)) {
-
-                            sendPUMP_useThisDevice("518163");
-                            sendBLEuseThisDevice("00:07:80:2D:9E:F4"); // for automated testing
-                        } else if (RT2Const.IPC.MSG_BLE_RileyLinkReady.equals(action)) {
                     switch (receivedIntent.getAction()) {
                         case RT2Const.local.INTENT_NEW_rileylinkAddressKey:
-                            clientConnection.sendBLEuseThisDevice(prefs.getString(RT2Const.serviceLocal.rileylinkAddressKey, ""));
+                            serviceClientActions.sendBLEuseThisDevice(prefs.getString(RT2Const.serviceLocal.rileylinkAddressKey, ""));
                             break;
                         case RT2Const.local.INTENT_NEW_pumpIDKey:
-                            clientConnection.sendPUMP_useThisDevice(prefs.getString(RT2Const.serviceLocal.pumpIDKey, ""));
+                            serviceClientActions.sendPUMP_useThisDevice(prefs.getString(RT2Const.serviceLocal.pumpIDKey, ""));
                             break;
                         case RT2Const.IPC.MSG_BLE_RileyLinkReady:
                             setRileylinkStatusMessage("OK");
@@ -187,11 +187,12 @@ public class MainActivity extends AppCompatActivity {
                             Intent sendHistoryIntent = new Intent(RT2Const.local.INTENT_historyPageBundleIncoming);
                             sendHistoryIntent.putExtra(RT2Const.IPC.MSG_PUMP_history_key, storeForHistoryViewer);
                             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(sendHistoryIntent);
-                        } else if (RT2Const.IPC.MSG_ServiceResult.equals(action)) {
+                            break;
+                        case RT2Const.IPC.MSG_ServiceResult:
                             Log.i(TAG,"Received ServiceResult");
-                        } else {
-                            Log.e(TAG,"Unrecognized intent action: " + action);
-                        }
+                            break;
+                        default:
+                            Log.e(TAG,"Unrecognized intent action: " + receivedIntent.getAction());
                     }
                 }
             }
@@ -233,20 +234,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onTunePumpButtonClicked(View view) {
-        clientConnection.sendIPCMessage(RT2Const.IPC.MSG_PUMP_tunePump);
+        serviceClientActions.sendIPCMessage(RT2Const.IPC.MSG_PUMP_tunePump);
     }
 
     public void onFetchHistoryButtonClicked(View view) {
-        clientConnection.sendIPCMessage(RT2Const.IPC.MSG_PUMP_fetchHistory);
+        serviceClientActions.sendIPCMessage(RT2Const.IPC.MSG_PUMP_fetchHistory);
     }
 
     public void onFetchSavedHistoryButtonClicked(View view) {
-        clientConnection.sendIPCMessage(RT2Const.IPC.MSG_PUMP_fetchSavedHistory);
+        serviceClientActions.sendIPCMessage(RT2Const.IPC.MSG_PUMP_fetchSavedHistory);
     }
 
     public void onReadPumpClockButtonClicked(View view) {
-        ServiceCommand readPumpClockCommand = ServiceClientActions.makeReadPumpClockCommand();
-        roundtripServiceClientConnection.sendServiceCommand(readPumpClockCommand);
+        //ServiceCommand readPumpClockCommand = ServiceClientActions.makeReadPumpClockCommand();
+        //roundtripServiceClientConnection.sendServiceCommand(readPumpClockCommand);
+        serviceClientActions.makeReadPumpClockCommand();
     }
 
     /* UI Setup */
