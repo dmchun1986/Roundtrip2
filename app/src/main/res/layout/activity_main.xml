@@ -114,6 +114,26 @@
         </LinearLayout>
 
     </android.support.design.widget.CoordinatorLayout>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Read Pump Clock"
+            android:id="@+id/buttonReadPumpClock"
+            android:onClick="onReadPumpClockButtonClicked"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tune Pump"
+            android:id="@+id/buttonTunePump"
+            android:onClick="onTunePumpButtonClicked" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Fetch History and Save"
+            android:id="@+id/buttonFetchHistory"
+            android:onClick="onFetchHistoryButtonClicked" />
 
     <!-- Side navigation drawer UI -->
     <LinearLayout
